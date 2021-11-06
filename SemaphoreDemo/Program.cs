@@ -24,6 +24,7 @@ namespace SemaphoreDemo
                 Thread t = new Thread(ThreadProc);
                 syncI.indexI = i;
                 t.Start(syncI);
+                Thread.Sleep(500);
             }
             Thread.Sleep(3000);
             syncI._pool.Release(2);
