@@ -1,13 +1,48 @@
 ﻿using System;
 using System.Threading;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace SemaphoreDemo
 {
-    public class SemaphoreIndex
+    public class SemaphoreIndex:IDisposable
     {
         public SemaphoreSlim _pool;
+        //public IDisposable _pool;
         public EventWaitHandle indexTrigger;
+        //public IDisposable indexTrigger;
+        public SemaphoreIndex()
+        {
+            _pool = new SemaphoreSlim(1,3);
+            indexTrigger = new EventWaitHandle(false,EventResetMode.AutoReset);
+        }
+
         public int indexI;
+        private bool _disposed=false;
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        ~SemaphoreIndex()
+        {
+            Dispose(false);
+        }
+        protected virtual void Dispose(bool disposing)
+        {
+            if(_disposed)
+            { return; }
+            else
+            {
+                if(disposing)
+                {
+                    _pool?.Dispose();
+                    indexTrigger?.Dispose();
+                }
+                _disposed = true;
+            }
+        }
     }
     class Program
     {
@@ -16,22 +51,34 @@ namespace SemaphoreDemo
         static void Main(string[] args)
         {
             var syncI = new SemaphoreIndex();
-            syncI.indexTrigger = new EventWaitHandle(false, EventResetMode.AutoReset);
             syncI.indexI = 0;
+            int missionCount = 5;
             //Current Semaphore number means how many vacanies are waiting for used here. 
-            syncI._pool = new SemaphoreSlim(1,3);
             Console.WriteLine($"--------------------\n| Single Thread |\n--------------------");
-            while (syncI.indexI < 5)
+            /*
+             * while (syncI.indexI < 5)
+             * {
+             * syncI.indexTrigger.Reset();
+             * Thread t = new Thread(ThreadProc);
+             * t.Start(syncI);
+             * syncI.indexTrigger.WaitOne();
+             * Interlocked.Increment(ref syncI.indexI);
+             * }
+             */
+            var TaskList=new List<Task>();
+            while (syncI.indexI <missionCount)
             {
                 syncI.indexTrigger.Reset();
-                Thread t = new Thread(ThreadProc);
-                t.Start(syncI);
+                TaskList.Add(Task.Factory.StartNew(()=>ThreadProc(syncI)));
                 syncI.indexTrigger.WaitOne();
                 Interlocked.Increment(ref syncI.indexI);
             }
             Thread.Sleep(3000);
             syncI._pool.Release(2);
             Console.WriteLine($"--------------------\n| Three thread parallel |\n--------------------");
+            Task.WaitAll(TaskList.ToArray());
+            Console.WriteLine($"Disposing...");
+            syncI.Dispose();
             Console.WriteLine($"Main thread exits.\n");
         }
 
