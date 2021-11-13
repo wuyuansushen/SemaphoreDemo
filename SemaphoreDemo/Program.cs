@@ -24,11 +24,6 @@ namespace SemaphoreDemo
             Dispose(true);
             GC.SuppressFinalize(this);
         }
-
-        ~SemaphoreIndex()
-        {
-            Dispose(false);
-        }
         protected virtual void Dispose(bool disposing)
         {
             if(_disposed)
@@ -40,6 +35,9 @@ namespace SemaphoreDemo
                     _pool?.Dispose();
                     indexTrigger?.Dispose();
                 }
+
+                // Don't need to free unmanaged resource
+                // because this class doesn't override finalizer.
                 _disposed = true;
             }
         }
