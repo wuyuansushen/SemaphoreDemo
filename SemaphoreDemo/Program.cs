@@ -5,44 +5,7 @@ using System.Collections.Generic;
 
 namespace SemaphoreDemo
 {
-    public class SemaphoreIndex:IDisposable
-    {
-        public SemaphoreSlim _pool;
-        //public IDisposable _pool;
-        public EventWaitHandle indexTrigger;
-        //public IDisposable indexTrigger;
-        public SemaphoreIndex()
-        {
-            _pool = new SemaphoreSlim(1,3);
-            indexTrigger = new EventWaitHandle(false,EventResetMode.AutoReset);
-        }
-
-        public int indexI;
-        private bool _disposed=false;
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-        protected virtual void Dispose(bool disposing)
-        {
-            if(_disposed)
-            { return; }
-            else
-            {
-                if(disposing)
-                {
-                    _pool?.Dispose();
-                    indexTrigger?.Dispose();
-                }
-
-                // Don't need to free unmanaged resource
-                // because this class doesn't override finalizer.
-                _disposed = true;
-            }
-        }
-    }
-    class Program
+    partial class  Program
     {
         //private static SemaphoreSlim _pool;
 
@@ -80,21 +43,5 @@ namespace SemaphoreDemo
             Console.WriteLine($"Main thread exits.\n");
         }
 
-        private static void ThreadProc(object state)
-        {
-            ((SemaphoreIndex)state).indexTrigger.Set();
-            var num = ((SemaphoreIndex)state).indexI;
-            var _pool = ((SemaphoreIndex)state)._pool;
-            Console.WriteLine($"Thread {(int)num} starts.\nThread {(int)num} waits for the semaphore.\n");
-            _pool.Wait();
-            Console.WriteLine($"Thread {(int)num} Enter the semaphore.");
-
-            Thread.Sleep(1500);
-
-            Console.WriteLine($"Thread {(int)num} releases the semephore.");
-
-            //Release and show count previously.
-            Console.WriteLine($"Thread {(int)num} previous semaphore count: {_pool.Release(1)}\nPresent semaphore count: {_pool.CurrentCount}\n");
-        }
     }
 }
